@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Study Interface</title>
+    <style>
+        /* Dark Theme Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 768px;
+            background: #2d2d2d;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+
+        /* Chat Window */
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #444;
+        }
+
+        /* Message Styles */
+        .message {
+            margin: 10px 0;
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .bot-message {
+            text-align: left;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 75%;
+            padding: 14px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .user-bubble {
+            background: #00a8ff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot-bubble {
+            background: #4a4a4a;
+            color: #e0e0e0;
+            margin-right: auto;
+        }
+
+        /* GIF Container */
+        .gif-container {
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .gif {
+            max-width: 200px;
+            border-radius: 8px;
+            margin: 8px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Input Area */
+        .input-area {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            background: #2d2d2d;
+            border-top: 1px solid #444;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid #555;
+            border-radius: 24px;
+            margin: 6px 0;
+            font-size: 14px;
+            outline: none;
+            background: #3a3a3a;
+            color: #e0e0e0;
+            transition: border-color 0.3s;
+        }
+
+        #user-input:focus {
+            border-color: #00a8ff;
+        }
+
+        #send-button {
+            padding: 12px 24px;
+            background: #00a8ff;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 8px;
+        }
+
+        #send-button:hover {
+            background: #0077cc;
+        }
+
+        /* Suggested Emotions */
+        .suggested-emotions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .emotion-bubble {
+            padding: 10px 16px;
+            background: #3a3a3a;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: 500;
+        }
+
+        .emotion-bubble:hover {
+            background: #4a4a4a;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .chat-container {
+                margin: 10px;
+                height: calc(100vh - 20px);
+            }
+            
+            #user-input {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Chat Window -->
+        <div id="chat-box" class="chat-window"></div>
+
+        <!-- Input Area with Suggestions -->
+        <div class="input-area">
+            <!-- Emotion Quick Replies -->
+            <div class="suggested-emotions">
+                <div class="emotion-bubble" onclick="selectEmotion('😊 Happiest moment')">😊 Happiest moment</div>
+                <div class="emotion-bubble" onclick="selectEmotion('😢 Recent sadness')">😢 Recent sadness</div>
+                <div class="emotion-bubble" onclick="selectEmotion('😡 Frustrating experience')">😡 Frustrating experience</div>
+                <div class="emotion-bubble" onclick="selectEmotion('🥳 Exciting news')">🥳 Exciting news</div>
+                <div class="emotion-bubble" onclick="selectEmotion('😖 Stressful situation')">😖 Stressful situation</div>
+            </div>
+
+            <!-- Text Input and Send Button -->
+            <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off">
+            <button id="send-button">Send</button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading">Analyzing emotions...</div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loading = document.getElementById('loading');
+
+        // Emotion selection handler
+        function selectEmotion(emotion) {
+            userInput.value = emotion;
+            userInput.focus();
+            sendButton.click();
+        }
+
+        // Append messages to chat
+        function appendMessage(text, isUser, gifUrl = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${isUser ? 'user-bubble' : 'bot-bubble'}`;
+            bubble.textContent = text;
+            
+            messageDiv.appendChild(bubble);
+            
+            if (gifUrl && !isUser) {
+                const gifContainer = document.createElement('div');
+                gifContainer.className = 'gif-container';
+                const gif = document.createElement('img');
+                gif.src = `https://media.giphy.com/media/${gifUrl}/giphy.gif`;
+                gif.className = 'gif';
+                gifContainer.appendChild(gif);
+                messageDiv.appendChild(gifContainer);
+            }
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Handle message sending
+        async function sendMessage() {
+            const inputText = userInput.value.trim();
+            if (!inputText) return;
+
+            // Add user message
+            appendMessage(inputText, true);
+            userInput.value = '';
+            
+            // Show loading
+            loading.style.display = 'block';
+            
+            try {
+                const response = await fetch('http://localhost:5050/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_input: inputText })
+                });
+                
+                const data = await response.json();
+                
+                // Add bot response
+                appendMessage(data.text, false, data.gif);
+                
+            } catch (error) {
+                appendMessage('Error processing request. Please try again.', false);
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
